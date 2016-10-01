@@ -21,3 +21,4 @@ executable refs
                      , transformers
                      , mtl
                      , lens
+                     , tagged
