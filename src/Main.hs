@@ -20,15 +20,17 @@ module Main where
 
   type Name = String
 
+  type Ref a = Tagged a (Type, Name)
+
   data A = A {
       _nameA :: Name,
-      _refB :: Tagged B Name
+      _valuesA :: [Ref B]
     }
     deriving (Show)
 
   data B = B {
       _nameB :: Name,
-      _valueB :: Char
+      _valuesB :: [Ref B]
     }
     deriving (Show)
 
@@ -57,16 +59,13 @@ module Main where
   cachedA = lens _cachedA (\s a -> s { _cachedA = a })
   cachedB = lens _cachedB (\s a -> s { _cachedB = a })
 
-  class HasName a => CanBeCached a c where
-    slot :: Tagged a Name -> Lens' c (Cached a)
+  class HasName a => HasCacheSlot a c where
+    slot :: Ref a -> Lens' c (Cached a)
 
-  instance CanBeCached A Cache where
-    slot _ = cachedA
+  instance HasCacheSlot A Cache where slot _ = cachedA
+  instance HasCacheSlot B Cache where slot _ = cachedB
 
-  instance CanBeCached B Cache where
-    slot _ = cachedB
-
-  insert a = ask >>= liftIO . flip modifyIORef' (slot (unproxy (const (nameOf a))) %~ Map.insert (nameOf a) a)
+  insert a = ask >>= liftIO . flip modifyIORef' (slot (unproxy (const (typeOf a, nameOf a))) %~ Map.insert (nameOf a) a)
 
   lookup s n = do
     ref <- ask
@@ -79,20 +78,23 @@ module Main where
 
   withCache m = newIORef (Cache Map.empty Map.empty) >>= runReaderT m
 
-  instance CanBeCached a c => CanBeCached (Tagged a Name) c where
+  instance HasCacheSlot a c => HasCacheSlot (Ref a) c where
     slot _ = slot (undefined :: a)
 
-  instance HasName (Tagged a Name) where
-    nameOf = untag
+  instance HasType a => HasType (Ref a) where
+    typeOf (Tagged (t, _)) = t
 
-  unref tagged = lookup (slot tagged) (nameOf tagged)
+  instance HasName (Ref a) where
+    nameOf (Tagged (_, n)) = n
+
+  unref ref = lookup (slot ref) (nameOf ref)
 
   test = withCache $ do
-    insert (A "a" (Tagged "a" :: Tagged B Name))
-    insert (B "a" 'c')
+    insert (A "a" [Tagged (ObjB, "a") :: Ref B, Tagged (ObjB, "b") :: Ref B])
+    insert (B "a" [Tagged (ObjB, "b") :: Ref B, Tagged (ObjB, "a") :: Ref B])
     a <- lookupA "a"
     b <- lookupB "a"
-    let tc = Tagged "a" :: Tagged B Name
+    let tc = Tagged (ObjB, "b") :: Ref B
     c <- unref tc
     return (a, b, c, tc)
 
