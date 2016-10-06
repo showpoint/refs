@@ -1,6 +1,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
---{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -8,93 +9,54 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE GADTs #-}
 module Main where
-  import Prelude hiding (lookup)
-  import Control.Lens
-  import Control.Monad.IO.Class
-  import Control.Monad.Reader
-  import Data.IORef
-  import qualified Data.Map as Map
-  import Data.Map.Strict (Map)
-  import Data.Monoid ((<>))
-  import Data.Tagged
+  import Data.Proxy
+  import Data.Tagged hiding (proxy)
+
+  data A = A Name deriving Show
+  data B = B Name deriving Show
 
   type Name = String
+  class HasName a where
+    nameOf :: a -> Name
 
-  data A = A {
-      _nameA :: Name,
-      _refB :: Tagged B Name
-    }
-    deriving (Show)
+  instance HasName A where nameOf (A n) = n
+  instance HasName B where nameOf (B n) = n
 
-  data B = B {
-      _nameB :: Name,
-      _valueB :: Char
-    }
-    deriving (Show)
+  data Type = TA | TB deriving Show
 
-  data Type
-    = ObjA
-    | ObjB
-    deriving (Eq, Ord, Show)
+  class HasType a where
+    type TypeOf a
+    typeOf :: a -> TypeOf a
+    typeOf _ = typeProxy (Proxy :: Proxy a)
+    typeProxy :: Proxy a -> TypeOf a
 
-  class HasName a where nameOf :: a -> Name
-  instance HasName A where nameOf = _nameA
-  instance HasName B where nameOf = _nameB
+  instance HasType A where { type TypeOf A = Type; typeProxy _ = TA }
+  instance HasType B where { type TypeOf B = Type; typeProxy _ = TB }
 
-  class HasType a where typeOf :: a -> Type
-  instance HasType A where typeOf _ = ObjA
-  instance HasType B where typeOf _ = ObjB
+  newtype Ref r a = Ref { unRef :: r }
 
-  type Cached a = Map Name a
+  instance Show r => Show (Ref r a) where
+    show (Ref r) = "Ref " ++ show r
 
-  data Cache
-    = Cache {
-      _cachedA :: Cached A,
-      _cachedB :: Cached B
-    }
-    deriving (Show)
+  class Show r => HasRef a r | a -> r where
+    ref      :: a -> Ref r a
+    refProxy :: Proxy a -> r -> Ref r a
+    refProxy _ = Ref
+    rebuild  :: Ref r a -> a
 
-  cachedA = lens _cachedA (\s a -> s { _cachedA = a })
-  cachedB = lens _cachedB (\s a -> s { _cachedB = a })
+  instance HasRef A (Name, Type) where
+    ref a = Ref (nameOf a, typeOf a)
+    rebuild = A . fst . unRef
 
-  class HasName a => CanBeCached a c where
-    slot :: Tagged a Name -> Lens' c (Cached a)
-
-  instance CanBeCached A Cache where
-    slot _ = cachedA
-
-  instance CanBeCached B Cache where
-    slot _ = cachedB
-
-  insert a = ask >>= liftIO . flip modifyIORef' (slot (unproxy (const (nameOf a))) %~ Map.insert (nameOf a) a)
-
-  lookup s n = do
-    ref <- ask
-    c <- liftIO $ readIORef ref
-    let ca = c ^. s
-    return $ Map.lookup n ca
-
-  lookupA = lookup cachedA
-  lookupB = lookup cachedB
-
-  withCache m = newIORef (Cache Map.empty Map.empty) >>= runReaderT m
-
-  instance CanBeCached a c => CanBeCached (Tagged a Name) c where
-    slot _ = slot (undefined :: a)
-
-  instance HasName (Tagged a Name) where
-    nameOf = untag
-
-  unref tagged = lookup (slot tagged) (nameOf tagged)
-
-  test = withCache $ do
-    insert (A "a" (Tagged "a" :: Tagged B Name))
-    insert (B "a" 'c')
-    a <- lookupA "a"
-    b <- lookupB "a"
-    let tc = Tagged "a" :: Tagged B Name
-    c <- unref tc
-    return (a, b, c, tc)
+  instance HasRef B Name where
+    ref = Ref . nameOf
+    rebuild = B . unRef
 
   main :: IO ()
-  main = test >>= print
+  main = do
+    let a = ref (A "A") :: Ref (Name, Type) A
+        b = ref (B "B") :: Ref Name B
+    print a
+    print $ rebuild a
+    print b
+    print $ rebuild b
