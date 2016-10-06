@@ -33,30 +33,34 @@ module Main where
   instance HasType A where { type TypeOf A = Type; typeProxy _ = TA }
   instance HasType B where { type TypeOf B = Type; typeProxy _ = TB }
 
-  newtype Ref r a = Ref { unRef :: r }
+  data Ref a = Ref { unRef :: RefData a }
 
-  instance Show r => Show (Ref r a) where
-    show (Ref r) = "Ref " ++ show r
+  instance (Show r, r ~ RefData a) => Show (RefData a) where
 
-  class Show r => HasRef a r | a -> r where
-    ref      :: a -> Ref r a
-    refProxy :: Proxy a -> r -> Ref r a
+  class Show (RefData a) => HasRef a r | a -> r where
+    type RefData a :: *
+    ref      :: a -> Ref a
+    refProxy :: Proxy a -> RefData a -> Ref a
     refProxy _ = Ref
-    rebuild  :: Ref r a -> a
+    rebuild  :: Ref a -> a
 
   instance HasRef A (Name, Type) where
+    type RefData A = (Name, Type)
     ref a = Ref (nameOf a, typeOf a)
     rebuild = A . fst . unRef
 
+  refA = refProxy (Proxy :: Proxy A)
+
   instance HasRef B Name where
+    type RefData B = Name
     ref = Ref . nameOf
     rebuild = B . unRef
 
   main :: IO ()
   main = do
-    let a = ref (A "A") :: Ref (Name, Type) A
-        b = ref (B "B") :: Ref Name B
-    print a
+    let a = ref (A "A") :: Ref A
+        b = ref (B "B") :: Ref B
+--    print a
     print $ rebuild a
-    print b
+--    print b
     print $ rebuild b
