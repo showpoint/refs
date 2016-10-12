@@ -14,6 +14,7 @@ module Main where
 
   data A = A Name deriving Show
   data B = B Name deriving Show
+  data C = C Name deriving Show
 
   type Name = String
   class HasName a where
@@ -21,10 +22,11 @@ module Main where
 
   instance HasName A where nameOf (A n) = n
   instance HasName B where nameOf (B n) = n
+  instance HasName C where nameOf (C n) = n
 
-  data Type = TA | TB deriving Show
+  data Type = TA | TB | TC deriving Show
 
-  class HasType a where
+  class Show (TypeOf a) => HasType a where
     type TypeOf a
     typeOf :: a -> TypeOf a
     typeOf _ = typeProxy (Proxy :: Proxy a)
@@ -32,35 +34,47 @@ module Main where
 
   instance HasType A where { type TypeOf A = Type; typeProxy _ = TA }
   instance HasType B where { type TypeOf B = Type; typeProxy _ = TB }
+  instance HasType C where { type TypeOf C = Type; typeProxy _ = TC }
 
-  data Ref a = Ref { unRef :: RefData a }
+  type Ref a = Tagged a (RefData a)
 
-  instance (Show r, r ~ RefData a) => Show (RefData a) where
+  newtype TN a = TN { unTN :: (TypeOf a, Name) }
 
-  class Show (RefData a) => HasRef a r | a -> r where
+  instance HasType a => Show (TN a) where
+    show (TN (t, n)) = show t ++ " " ++ show n
+
+  class HasRef a r | a -> r where
     type RefData a :: *
-    ref      :: a -> Ref a
+    ref :: a -> Ref a
     refProxy :: Proxy a -> RefData a -> Ref a
-    refProxy _ = Ref
-    rebuild  :: Ref a -> a
+    refProxy _ = Tagged
+    rebuild :: Ref a -> a
 
-  instance HasRef A (Name, Type) where
-    type RefData A = (Name, Type)
-    ref a = Ref (nameOf a, typeOf a)
-    rebuild = A . fst . unRef
+  instance HasRef A (TN A) where
+    type RefData A = TN A
+    ref a = Tagged $ TN (typeOf a, nameOf a)
+    rebuild = A . snd . unTN . untag
 
   refA = refProxy (Proxy :: Proxy A)
 
   instance HasRef B Name where
     type RefData B = Name
-    ref = Ref . nameOf
-    rebuild = B . unRef
+    ref = Tagged . nameOf
+    rebuild = B . untag
+
+  instance HasRef C (TN C) where
+    type RefData C = TN C
+    ref a = Tagged $ TN (typeOf a, nameOf a)
+    rebuild = C . snd . unTN . untag
 
   main :: IO ()
   main = do
     let a = ref (A "A") :: Ref A
         b = ref (B "B") :: Ref B
---    print a
+        c = ref (C "B") :: Ref C
+    print a
     print $ rebuild a
---    print b
+    print b
     print $ rebuild b
+    print c
+    print $ rebuild c
