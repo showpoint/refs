@@ -10,6 +10,7 @@ module Data where
   import GHC.Generics (Generic)
   import Class.Name
   import Class.Type
+  import Data.Type
   import Unique
   import Refs
 
@@ -20,8 +21,6 @@ module Data where
   instance HasName A where nameOf (A n) = n
   instance HasName B where nameOf (B n) = n
   instance HasName C where nameOf (C n) = n
-
-  data Type = TA | TB | TC deriving (Eq, Ord, Show, Read)
 
   instance HasType A Type where typeOf _ = TA
   instance HasType B Type where typeOf _ = TB
@@ -38,3 +37,7 @@ module Data where
   instance HasRef A
   instance HasRef B
   instance HasRef C
+
+  refA = refProxy (Proxy :: Proxy A)
+  refB = refProxy (Proxy :: Proxy B)
+  refC = refProxy (Proxy :: Proxy C)

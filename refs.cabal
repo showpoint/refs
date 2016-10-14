@@ -19,14 +19,17 @@ library
                      , Data
                      , Data.Db
                      , Data.Db.Instances
+                     , Data.Type
                      , Refs
                      , Run
+                     , Session
                      , Storage
+                     , Storage.Cache
+                     , Storage.Cache.Env
                      , Storage.Db
                      , Storage.Db.Classes
                      , Storage.Db.Env
                      , Storage.Db.Schema
-                     , Storage.Map
                      , Unique
   build-depends:       base >= 4.7 && < 5
                      , bytestring
@@ -51,14 +54,17 @@ executable refs
                      , Data
                      , Data.Db
                      , Data.Db.Instances
+                     , Data.Type
                      , Refs
                      , Run
+                     , Session
                      , Storage
+                     , Storage.Cache
+                     , Storage.Cache.Env
                      , Storage.Db
                      , Storage.Db.Classes
                      , Storage.Db.Env
                      , Storage.Db.Schema
-                     , Storage.Map
                      , Unique
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5

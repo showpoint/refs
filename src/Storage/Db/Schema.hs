@@ -11,7 +11,7 @@ module Storage.Db.Schema where
   import Database.Persist.TH
   import Data.ByteString
   import Class.Name
-  import Data
+  import Data.Type
   import Data.Db
 
   share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -20,4 +20,8 @@ module Storage.Db.Schema where
       name Name
       data ByteString
       DataTypeNameUniq type name
+    Bs
+      name Name
+      data ByteString
+      BsNameUniq name
   |]

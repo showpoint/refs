@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -13,26 +14,15 @@ module Main where
   import qualified Data.Map as Map
   import Data.Map (Map)
   import Data
+  import Data.Type
   import Refs
-  import Storage
-  import Storage.Db
   import Run
+  import Storage
 
   test = do
-    let ra = ref (A "A") :: Ref A
-        rb = ref (B "B") :: Ref B
-        rc = ref (C "B") :: Ref C
-    store $ A "A"
-    store $ A "AA"
-    store $ C "A"
-    store $ C "B"
-    store $ A "B"
-    traceM $ show ra
-    find ra >>= traceM . show
-    traceM $ show rb
-    --find rb >>= traceM . show
-    traceM $ show rc
-    find rc >>= traceM . show
+    find (refA (TA, "A")) >>= traceM . show
+    find (refB "B")       >>= traceM . show
+    find (refC (TC, "A")) >>= traceM . show
 
   main :: IO ()
-  main = runInit test >>= print
+  main = runInit "D:\\Work\\refs\\refs.db" test >>= print
