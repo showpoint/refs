@@ -12,13 +12,67 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
+library
+  hs-source-dirs:      src
+  exposed-modules:     Class.Name
+                     , Class.Type
+                     , Data
+                     , Data.Db
+                     , Data.Db.Instances
+                     , Refs
+                     , Run
+                     , Storage
+                     , Storage.Db
+                     , Storage.Db.Classes
+                     , Storage.Db.Env
+                     , Storage.Db.Schema
+                     , Storage.Map
+                     , Unique
+  build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , cereal
+                     , containers
+                     , lens
+                     , monad-control
+                     , monad-logger
+                     , mtl
+                     , persistent
+                     , persistent-template
+                     , persistent-sqlite
+                     , transformers
+                     , transformers-base
+  default-language:    Haskell2010
+
 executable refs
   hs-source-dirs:      src
   main-is:             Main.hs
+  other-modules:       Class.Name
+                     , Class.Type
+                     , Data
+                     , Data.Db
+                     , Data.Db.Instances
+                     , Refs
+                     , Run
+                     , Storage
+                     , Storage.Db
+                     , Storage.Db.Classes
+                     , Storage.Db.Env
+                     , Storage.Db.Schema
+                     , Storage.Map
+                     , Unique
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , cereal
                      , containers
-                     , transformers
-                     , mtl
                      , lens
+                     , mtl
+                     , monad-control
+                     , monad-logger
+                     , persistent
+                     , persistent-template
+                     , persistent-sqlite
+                     , transformers
+                     , transformers-base
                      , tagged
+                     , refs
