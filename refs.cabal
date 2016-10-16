@@ -20,6 +20,7 @@ library
                      , Data.Db
                      , Data.Db.Instances
                      , Data.Type
+                     , Execute
                      , Refs
                      , Run
                      , Session
