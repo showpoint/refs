@@ -20,12 +20,13 @@ module Storage.Db where
   import Storage.Db.Env
   import Unique
 
+  type Persistable a = (HasDbRepr a, HasDbKey a, PersistEntity (DbEntity a), PersistEntityBackend (DbEntity a) ~ SqlBackend)
+  type Db s m = (MonadIO m, MonadReader s m, HasDbEnv s)
+
   db m = view dbConn >>= liftIO . runSqlPersistM m
 
-  find :: (PersistEntity (DbEntity a), MonadReader s m, HasDbEnv s, MonadIO m,
-           HasDbRepr a (DbEntity a), HasDbKey a (DbEntity a)) => Ref a -> m (Maybe a)
+  find :: (Persistable a, Db s m) => Ref a -> m (Maybe a)
   find ref = fmap (fromRepr . entityVal) <$> db (getBy (refToKey ref))
 
-  store :: (PersistEntity (DbEntity a), MonadReader s m, HasDbEnv s, MonadIO m,
-            HasDbRepr a (DbEntity a), HasDbKey a (DbEntity a), Show a) => a -> m ()
+  store :: (Persistable a, Db s m) => a -> m ()
   store a = db $ deleteBy (key a) >> insert_ (toRepr a)

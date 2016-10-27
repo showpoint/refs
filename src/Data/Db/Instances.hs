@@ -13,30 +13,30 @@ module Data.Db.Instances where
   import Refs
   import Unique
 
-  instance HasDbEntity A Data where type DbEntity A = Data
-  instance HasDbEntity B Bs   where type DbEntity B = Bs
-  instance HasDbEntity C Data where type DbEntity C = Data
+  instance HasDbEntity A where type DbEntity A = Data
+  instance HasDbEntity B where type DbEntity B = Bs
+  instance HasDbEntity C where type DbEntity C = Data
 
-  instance HasDbKey A Data where
+  instance HasDbKey A where
     key = uncurry DataTypeNameUniq . unique
     refToKey = uncurry DataTypeNameUniq . unRef
 
-  instance HasDbKey B Bs where
+  instance HasDbKey B where
     key = BsNameUniq . unique
     refToKey = BsNameUniq . unRef
 
-  instance HasDbKey C Data where
+  instance HasDbKey C where
     key = uncurry DataTypeNameUniq . unique
     refToKey = uncurry DataTypeNameUniq . unRef
 
-  instance HasDbRepr A Data where
+  instance HasDbRepr A where
     fromRepr (Data _ _ d) = either (error "DecodeError") id $ decode d
     toRepr a = Data (typeOf a) (nameOf a) $ encode a
 
-  instance HasDbRepr B Bs where
+  instance HasDbRepr B where
     fromRepr (Bs _ d) = either (error "DecodeError") id $ decode d
     toRepr a = Bs (nameOf a) $ encode a
 
-  instance HasDbRepr C Data where
+  instance HasDbRepr C where
     fromRepr (Data _ _ d) = either (error "DecodeError") id $ decode d
     toRepr a = Data (typeOf a) (nameOf a) $ encode a
